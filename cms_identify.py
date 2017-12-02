@@ -75,7 +75,7 @@ def scan(host, thread_count):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Hacking for fun! identify cms")
+    parser = argparse.ArgumentParser(description="Hacking for fun! identify cms", version='0.2')
     parser.add_argument('host', help='must start with http(s)')
     parser.add_argument('-t', '--thread_count', default=5)
     args = parser.parse_args()
