@@ -1,6 +1,4 @@
-# cms_identify
-
-# 跨平台cms识别工具
+# cms_identify 跨平台cms识别工具
 
 change log:  
 2017/12/2
