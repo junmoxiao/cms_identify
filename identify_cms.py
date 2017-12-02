@@ -78,6 +78,7 @@ def scan(host):
 if __name__ == '__main__':
     if len(sys.argv) != 2 or not sys.argv[1].lower().startswith('http'):
         print '''\
+        Hacking for fun............code by junmoxiao
         Example: python cmsIdentify.py http(s)://www.baidu.com\
         '''
         sys.exit(1)
