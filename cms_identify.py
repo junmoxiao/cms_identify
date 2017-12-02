@@ -27,7 +27,7 @@ def request_cms(host, path, keyword, cms):
 
 
 def get_cms_list():
-    cms_list = glob.glob("./cms/*")
+    cms_list = glob.glob("./data/*")
     for cms in cms_list:
         file_queue.put(cms)
 
