@@ -2,7 +2,7 @@
 
 change log:  
 2017/12/2
-  加入对多线程的支持,对ctrl+c的响应
+  加入对多线程的支持
   
 todo list:  
   加入cms特征提取功能
