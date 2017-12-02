@@ -1,3 +1,4 @@
+__author__ = 'junmoxiao'
 #!/usr/bin/env python
 #coding=utf-8
 import glob, sys, requests
@@ -6,8 +7,9 @@ import Queue
 import re
 import signal
 import os
+import argparse
 
-threads_count = 5
+
 file_queue = Queue.Queue()
 lock = threading.Lock()
 threads = []
@@ -54,9 +56,9 @@ def handle_interrupt():
     return True
        
     
-def scan(host):
+def scan(host, thread_count):
     get_cms_list()
-    for i in range(threads_count):
+    for i in range(thread_count):
         t = threading.Thread(target=check_cms, args=(host,))
         t.setDaemon(True)
         threads.append(t)
@@ -67,21 +69,17 @@ def scan(host):
                 continue
             break
         except KeyboardInterrupt:
-            print 'User Interrupt!'
+            print '! User Interrupt!'
             os._exit(1)
-
-
     print 'can\'t identify it......'
 
 
-
 if __name__ == '__main__':
-    if len(sys.argv) != 2 or not sys.argv[1].lower().startswith('http'):
-        print '''\
-        Hacking for fun............code by junmoxiao
-        Example: python cmsIdentify.py http(s)://www.baidu.com\
-        '''
+    parser = argparse.ArgumentParser(description="Hacking for fun! identify cms")
+    parser.add_argument('-u', '--host', help='must start with http(s)')
+    parser.add_argument('-t', '--thread_count', default=5)
+    args = parser.parse_args()
+    if not args.host.lower().startswith('http'):
+        parser.print_help()
         sys.exit(1)
-
-    scan(sys.argv[1])
-
+    scan(args.host, args.thread_count)
