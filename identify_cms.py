@@ -1,36 +1,86 @@
 #!/usr/bin/env python
 #coding=utf-8
-import glob,urllib, urllib2, re, sys, requests
+import glob, sys, requests
+import threading
+import Queue
+import re
+import signal
+import os
 
-def scan():
-    host = sys.argv[1]
-    header = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}
-    cms_list = glob.glob('./cms/*')
-    amount = len(cms_list)
-    count = 0
+threads_count = 5
+file_queue = Queue.Queue()
+lock = threading.Lock()
+threads = []
+
+def request_cms(host, path, keyword, cms):   
+    headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}
+    r = requests.get(host + path, headers=headers)
+    if r.status_code != 200:
+        return None
+    data = r.text
+    if re.compile(r'(?i)'+keyword).search(data):
+        return cms
+    else:
+        return None
+
+
+def get_cms_list():
+    cms_list = glob.glob("./cms/*")
     for cms in cms_list:
-        for line in open(cms, 'r'):
-            line = line.strip().split('------')
-            if len(line) != 3:
-                continue            
-            try:
-                r = requests.get(host + line[0])
-                if r.status_code != 200:
-                    continue
-            except:
+        file_queue.put(cms)
+
+
+def check_cms(host):
+    while not file_queue.empty():
+        file_path = file_queue.get()
+        for line in open(file_path):
+            path, keyword, cms = line.split('------')
+            result = request_cms(host, path, keyword, cms)      
+            if result != None:
+                lock.acquire()
+                print "* This is %s" % result
+                lock.release()
+                os._exit(1)
+        lock.acquire()
+        print "This is not %s" % cms.strip()
+        lock.release()
+
+
+def handle_interrupt():
+    for t in threads:
+        t.join(0.3)
+        if t.is_alive():
+            return False
+    return True
+       
+    
+def scan(host):
+    get_cms_list()
+    for i in range(threads_count):
+        t = threading.Thread(target=check_cms, args=(host,))
+        t.setDaemon(True)
+        threads.append(t)
+        t.start()
+    while True:
+        try:
+            while not handle_interrupt():
                 continue
-            data = r.text
-            if re.compile(r'(?i)'+line[1]).search(data):
-                    print 'Identified: '+host +' is ' + line[2]
-                    sys.exit(0)
-        count += 1
-        print 'complete %d/%d' % (count, amount)
+            break
+        except KeyboardInterrupt:
+            print 'User Interrupt!'
+            os._exit(1)
+
+
     print 'can\'t identify it......'
 
+
+
 if __name__ == '__main__':
-    if len(sys.argv) != 2 or 'http://' not in sys.argv[1]:
+    if len(sys.argv) != 2 or not sys.argv[1].lower().startswith('http'):
         print '''\
-        Example: python cmsIdentify.py http://www.baidu.com\
+        Example: python cmsIdentify.py http(s)://www.baidu.com\
         '''
         sys.exit(1)
-    scan()
+
+    scan(sys.argv[1])
+
